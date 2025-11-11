@@ -78,7 +78,7 @@ export class HelpModal extends BaseModal {
         <section>
           <h3 class="text-xl font-bold mb-4">Need More Help?</h3>
           <div class="flex gap-3">
-            <a href="documentation.html" class="flex-1 px-4 py-3 bg-blue-500 text-white rounded-lg text-center font-semibold hover:bg-blue-600 transition" target="_blank">
+            <a href="...documentation.html" class="flex-1 px-4 py-3 bg-blue-500 text-white rounded-lg text-center font-semibold hover:bg-blue-600 transition" target="_blank">
               View Documentation
             </a>
             <a href="#" class="flex-1 px-4 py-3 bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-lg text-center font-semibold hover:bg-slate-300 dark:hover:bg-slate-600 transition">
@@ -139,3 +139,4 @@ export class HelpModal extends BaseModal {
     `).join('')
   }
 }
+
