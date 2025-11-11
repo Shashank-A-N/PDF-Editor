@@ -20,7 +20,7 @@ export class SettingsModal extends BaseModal {
     this.loadSettings()
   }
 
-  getContent() {
+ getContent() {
     return `
       <div class="p-6">
         <div class="grid grid-cols-4 gap-6">
@@ -52,7 +52,7 @@ export class SettingsModal extends BaseModal {
                     <label class="font-medium">Auto-save</label>
                     <p class="text-sm text-slate-500 dark:text-slate-400">Automatically save your work</p>
                   </div>
-                  <input type="checkbox" id="setting-autosave" class="w-5 h-5">
+                  <input type="checkbox" id="setting-autosave" class="w-5 h-5 rounded border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 accent-blue-500">
                 </div>
 
                 <div class="flex items-center justify-between">
@@ -60,7 +60,7 @@ export class SettingsModal extends BaseModal {
                     <label class="font-medium">Auto-save interval (minutes)</label>
                     <p class="text-sm text-slate-500 dark:text-slate-400">How often to auto-save</p>
                   </div>
-                  <input type="number" id="setting-autosave-interval" min="1" max="60" class="w-24 px-3 py-2 border-2 border-slate-300 dark:border-slate-600 rounded-lg">
+                  <input type="number" id="setting-autosave-interval" min="1" max="60" class="w-24 px-3 py-2 border-2 border-slate-300 dark:border-slate-600 rounded-lg bg-white text-slate-900 dark:bg-slate-700 dark:text-slate-100">
                 </div>
 
                 <div class="flex items-center justify-between">
@@ -68,7 +68,7 @@ export class SettingsModal extends BaseModal {
                     <label class="font-medium">Show tooltips</label>
                     <p class="text-sm text-slate-500 dark:text-slate-400">Display helpful tooltips</p>
                   </div>
-                  <input type="checkbox" id="setting-tooltips" class="w-5 h-5">
+                  <input type="checkbox" id="setting-tooltips" class="w-5 h-5 rounded border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 accent-blue-500">
                 </div>
 
                 <div class="flex items-center justify-between">
@@ -76,7 +76,7 @@ export class SettingsModal extends BaseModal {
                     <label class="font-medium">Theme</label>
                     <p class="text-sm text-slate-500 dark:text-slate-400">Interface color scheme</p>
                   </div>
-                  <select id="setting-theme" class="px-3 py-2 border-2 border-slate-300 dark:border-slate-600 rounded-lg">
+                  <select id="setting-theme" class="px-3 py-2 border-2 border-slate-300 dark:border-slate-600 rounded-lg bg-white text-slate-900 dark:bg-slate-700 dark:text-slate-100">
                     <option value="light">Light</option>
                     <option value="dark">Dark</option>
                     <option value="auto">Auto</option>
@@ -93,7 +93,7 @@ export class SettingsModal extends BaseModal {
                   <div>
                     <label class="font-medium">Default font</label>
                   </div>
-                  <select id="setting-default-font" class="px-3 py-2 border-2 border-slate-300 dark:border-slate-600 rounded-lg">
+                  <select id="setting-default-font" class="px-3 py-2 border-2 border-slate-300 dark:border-slate-600 rounded-lg bg-white text-slate-900 dark:bg-slate-700 dark:text-slate-100">
                     <option value="Helvetica">Helvetica</option>
                     <option value="Times-Roman">Times New Roman</option>
                     <option value="Courier">Courier</option>
@@ -104,21 +104,21 @@ export class SettingsModal extends BaseModal {
                   <div>
                     <label class="font-medium">Default font size</label>
                   </div>
-                  <input type="number" id="setting-default-font-size" min="8" max="72" class="w-24 px-3 py-2 border-2 border-slate-300 dark:border-slate-600 rounded-lg">
+                  <input type="number" id="setting-default-font-size" min="8" max="72" class="w-24 px-3 py-2 border-2 border-slate-300 dark:border-slate-600 rounded-lg bg-white text-slate-900 dark:bg-slate-700 dark:text-slate-100">
                 </div>
 
                 <div class="flex items-center justify-between">
                   <div>
                     <label class="font-medium">Grid size (pixels)</label>
                   </div>
-                  <input type="number" id="setting-grid-size" min="5" max="100" class="w-24 px-3 py-2 border-2 border-slate-300 dark:border-slate-600 rounded-lg">
+                  <input type="number" id="setting-grid-size" min="5" max="100" class="w-24 px-3 py-2 border-2 border-slate-300 dark:border-slate-600 rounded-lg bg-white text-slate-900 dark:bg-slate-700 dark:text-slate-100">
                 </div>
 
                 <div class="flex items-center justify-between">
                   <div>
                     <label class="font-medium">Snap threshold (pixels)</label>
                   </div>
-                  <input type="number" id="setting-snap-threshold" min="1" max="20" class="w-24 px-3 py-2 border-2 border-slate-300 dark:border-slate-600 rounded-lg">
+                  <input type="number" id="setting-snap-threshold" min="1" max="20" class="w-24 px-3 py-2 border-2 border-slate-300 dark:border-slate-600 rounded-lg bg-white text-slate-900 dark:bg-slate-700 dark:text-slate-100">
                 </div>
               </div>
             </div>
@@ -132,7 +132,7 @@ export class SettingsModal extends BaseModal {
                     <label class="font-medium">Render quality</label>
                     <p class="text-sm text-slate-500 dark:text-slate-400">Higher quality uses more resources</p>
                   </div>
-                  <select id="setting-render-quality" class="px-3 py-2 border-2 border-slate-300 dark:border-slate-600 rounded-lg">
+                  <select id="setting-render-quality" class="px-3 py-2 border-2 border-slate-300 dark:border-slate-600 rounded-lg bg-white text-slate-900 dark:bg-slate-700 dark:text-slate-100">
                     <option value="low">Low</option>
                     <option value="medium">Medium</option>
                     <option value="high">High</option>
@@ -144,7 +144,7 @@ export class SettingsModal extends BaseModal {
                     <label class="font-medium">Smooth scrolling</label>
                     <p class="text-sm text-slate-500 dark:text-slate-400">Enable smooth scrolling animations</p>
                   </div>
-                  <input type="checkbox" id="setting-smooth-scroll" class="w-5 h-5">
+                  <input type="checkbox" id="setting-smooth-scroll" class="w-5 h-5 rounded border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 accent-blue-500">
                 </div>
               </div>
             </div>
@@ -221,7 +221,7 @@ export class SettingsModal extends BaseModal {
     ]
 
     return shortcuts.map(s => `
-      <div class="flex justify-between items-center py-2 px-3 rounded hover:bg-slate-50 dark:hover:bg-slate-800">
+      <div class="flex justify-between items-center py-2 px-3 rounded hover:bg-white-50 dark:hover:bg-white-800">
         <span class="text-sm">${s.action}</span>
         <kbd class="px-2 py-1">${s.keys}</kbd>
       </div>
@@ -242,7 +242,7 @@ export class SettingsModal extends BaseModal {
       if (tab.dataset.tab === tabName) {
         tab.className = 'settings-tab w-full text-left px-4 py-3 rounded-lg bg-blue-500 text-white font-medium'
       } else {
-        tab.className = 'settings-tab w-full text-left px-4 py-3 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700'
+        tab.className = 'settings-tab w-full text-left px-4 py-3 rounded-lg hover:bg-white-100 dark:hover:bg-white-700'
       }
     })
 
