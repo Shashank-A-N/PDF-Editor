@@ -25,9 +25,6 @@ import { ExportModal } from './ui/modals/export-modal.js';
 import { SettingsModal } from './ui/modals/settings-modal.js';
 import { HelpModal } from './ui/modals/help-modal.js';
 import { AboutModal } from './ui/modals/about-modal.js';
-// Optional: keep available for other parts of UI (not used directly here)
-// import { SignatureModal } from './ui/modals/signature-modal.js';
-// import { OcrModal } from './ui/modals/ocr-modal.js';
 
 // Properties
 import { PropertiesManager } from './ui/properties/properties-manager.js';
@@ -67,6 +64,27 @@ let panels;
 let contextMenu;
 let notifications;
 let keyboard;
+
+// Interaction flags for history grouping
+let isPointerActive = false;
+let changedDuringPointer = false;
+
+// Tools that should checkpoint on pointer interaction completion
+const TOOLS_CHECKPOINT_ON_POINTER = new Set([
+  'select', 'draw', 'rect', 'oval', 'line', 'highlight', 'image', 'signature', 'eraser', 'form'
+]);
+
+// Debounce helper
+function debounce(fn, wait = 300) {
+  let t;
+  return (...args) => {
+    clearTimeout(t);
+    t = setTimeout(() => fn(...args), wait);
+  };
+}
+const checkpointPropsDebounced = debounce(() => {
+  history?.checkpoint?.('Property change');
+}, 300);
 
 // --------------------
 // Tool Manager (kept minimal)
@@ -155,7 +173,12 @@ function bindCanvasPointer() {
 
   const getTool = () => toolManager.getCurrentTool();
 
-  const handlePointerDown = (e) => getTool()?.onPointerDown?.(e);
+  const handlePointerDown = (e) => {
+    isPointerActive = true;
+    changedDuringPointer = false;
+    getTool()?.onPointerDown?.(e);
+  };
+
   const handlePointerMove = (e) => {
     if (els.cursorLabel) {
       const rect = canvas.getBoundingClientRect();
@@ -165,18 +188,39 @@ function bindCanvasPointer() {
     }
     getTool()?.onPointerMove?.(e);
   };
-  const handlePointerUp = (e) => getTool()?.onPointerUp?.(e);
-  const handleDoubleClick = (e) => getTool()?.onDoubleClick?.(e);
-  const handleMouseLeave = (e) => getTool()?.onPointerUp?.(e);
 
-  // Mouse
+  const endPointerSession = () => {
+    if (!isPointerActive) return;
+    isPointerActive = false;
+
+    if (changedDuringPointer && TOOLS_CHECKPOINT_ON_POINTER.has(state.currentTool)) {
+      history?.checkpoint?.('Edit objects');
+      changedDuringPointer = false;
+    }
+  };
+
+  const handlePointerUp = (e) => {
+    getTool()?.onPointerUp?.(e);
+    endPointerSession();
+  };
+
+  const handleDoubleClick = (e) => {
+    getTool()?.onDoubleClick?.(e);
+  };
+
+  const handleMouseLeave = (e) => {
+    getTool()?.onPointerUp?.(e);
+    endPointerSession();
+  };
+
+  // Mouse Events
   canvas.addEventListener('mousedown', handlePointerDown);
   canvas.addEventListener('mousemove', handlePointerMove);
   canvas.addEventListener('mouseup', handlePointerUp);
   canvas.addEventListener('dblclick', handleDoubleClick);
   canvas.addEventListener('mouseleave', handleMouseLeave);
 
-  // Touch
+  // Touch Events
   canvas.addEventListener('touchstart', (e) => {
     if (e.touches.length === 1) {
       e.preventDefault();
@@ -195,6 +239,8 @@ function bindCanvasPointer() {
     e.preventDefault();
     if (e.changedTouches.length > 0) {
       handlePointerUp(e.changedTouches[0]);
+    } else {
+      endPointerSession();
     }
   }, { passive: false });
 }
@@ -254,6 +300,32 @@ function toggleFullscreen() {
   }
 }
 
+// Force the same page-refresh flow as clicking the current page thumbnail
+function refreshCurrentPageView(forceThumbs = true) {
+  const currentPage = state.view.page;
+
+  // Best available public API to re-run page render pipeline
+  if (typeof renderer?.goToPage === 'function') {
+    renderer.goToPage(currentPage);
+  } else if (typeof panels?.goToPage === 'function') {
+    panels.goToPage(currentPage);
+  } else {
+    // Emit a page change event if your app listens to it
+    if (EVENTS.PAGE_CHANGED) {
+      eventBus.emit(EVENTS.PAGE_CHANGED, { page: currentPage, force: true, source: 'history' });
+    } else {
+      // Fallback: hard refresh
+      renderer?.resize?.();
+      renderer?.renderAll?.();
+    }
+  }
+
+  if (forceThumbs) {
+    renderer?.renderThumbnails?.();
+  }
+  updateFileInfo();
+}
+
 // -------------
 // UI binding
 // -------------
@@ -269,6 +341,14 @@ async function handleOpenFile(file) {
     renderer?.init?.();
     await renderer?.renderAll?.();
     await renderer?.renderThumbnails?.();
+
+    // Reset history for the opened document and rewire
+    history = new History(state, eventBus);
+    if (panels) panels.history = history;
+    if (contextMenu) contextMenu.history = history;
+    if (keyboard) keyboard.history = history;
+    if (toolbar) toolbar.history = history;
+    history.checkpoint?.('Opened document');
 
     updateFileInfo();
   } catch (error) {
@@ -311,7 +391,16 @@ function bindGlobalUI() {
       els.editor?.classList.remove('hidden');
       renderer?.init?.();
       await renderer?.renderAll?.();
+      await renderer?.renderThumbnails?.();
       updateFileInfo();
+
+      // Reset history for new doc and rewire
+      history = new History(state, eventBus);
+      if (panels) panels.history = history;
+      if (contextMenu) contextMenu.history = history;
+      if (keyboard) keyboard.history = history;
+      if (toolbar) toolbar.history = history;
+      history.checkpoint?.('New document');
     } finally {
       isFileLoading = false;
     }
@@ -333,14 +422,17 @@ function bindGlobalUI() {
     modal.show();
   });
 
+  // Canonical handlers for undo/redo: refresh page pipeline like clicking thumbnail
   bind(els.undoBtn, 'click', () => {
-    history.undo();
-    renderer?.renderAll?.();
+    if (history.undo()) {
+      refreshCurrentPageView(true);
+    }
   });
 
   bind(els.redoBtn, 'click', () => {
-    history.redo();
-    renderer?.renderAll?.();
+    if (history.redo()) {
+      refreshCurrentPageView(true);
+    }
   });
 
   bind(els.themeToggle, 'click', () => {
@@ -390,7 +482,7 @@ function bindGlobalUI() {
         };
         state.objects.push(obj);
         history.checkpoint('Added image');
-        renderer?.renderAll?.();
+        eventBus.emit('object:modified');
       };
       img.src = event.target.result;
     };
@@ -488,6 +580,37 @@ async function boot() {
     // Bus and base events
     eventBus = new EventBus();
 
+    // Listen for page changes and keep UI + thumbnails in sync
+    eventBus.on(EVENTS.PAGE_CHANGED, (payload) => {
+      // normalize index & page
+      let idx = null;
+      if (payload && typeof payload.index === 'number') {
+        idx = payload.index;
+      } else if (payload && typeof payload.page === 'number') {
+        // sometimes page may be 1-based number
+        idx = Math.max(0, payload.page - 1);
+      } else if (typeof state.currentPageIndex === 'number') {
+        idx = state.currentPageIndex;
+      } else {
+        idx = 0;
+      }
+
+      // update canonical state values
+      state.currentPageIndex = idx;
+      state.view = state.view || {};
+      state.view.page = idx + 1;
+      state.currentPage = (state.pages && state.pages[idx]) || null;
+
+      // refresh thumbnails if renderer supports it
+      try { renderer?.renderThumbnails?.(); } catch (e) { console.warn('renderThumbnails error', e); }
+
+      // update footer and file info
+      try { updateFileInfo(); } catch (e) { /* ignore */ }
+
+      // re-render visible page (lightweight)
+      try { renderer?.renderAll?.(); } catch (e) { console.warn('renderAll error', e); }
+    });
+
     // Selection -> PropertiesManager
     eventBus.on(EVENTS.SELECTION_CHANGED, (data) => {
       const selection = data.selection || [];
@@ -501,7 +624,32 @@ async function boot() {
     // Propagate object lifecycle to unified render
     eventBus.on(EVENTS.OBJECT_UPDATED, () => eventBus.emit('object:modified'));
     eventBus.on(EVENTS.OBJECT_DELETED, () => eventBus.emit('object:deleted'));
-    eventBus.on(EVENTS.RENDER_REQUESTED, () => renderer.renderAll?.());
+    // eventBus.on(EVENTS.RENDER_REQUESTED, () => renderer.renderAll?.());
+
+    // History checkpoints on changes
+    eventBus.on('object:modified', () => {
+      if (isPointerActive) {
+        if (TOOLS_CHECKPOINT_ON_POINTER.has(state.currentTool)) {
+          changedDuringPointer = true;
+        }
+      } else {
+        checkpointPropsDebounced();
+      }
+      // Always refresh overlays on modifications
+      renderer?.renderAll?.();
+    });
+
+    eventBus.on('object:deleted', () => {
+      history?.checkpoint?.('Delete object');
+      renderer?.renderAll?.();
+    });
+
+    // Refresh page view on undo/redo (keyboard or programmatic)
+    eventBus.on(EVENTS.HISTORY_CHANGED, (info) => {
+      if (info?.action === 'undo' || info?.action === 'redo') {
+        refreshCurrentPageView(true);
+      }
+    });
 
     // State
     stateManager = new StateManager();
@@ -510,8 +658,12 @@ async function boot() {
     state.clipboard = [];
     if (!state.objects) state.objects = [];
     if (!state.annotations) state.annotations = [];
+    if (!state.layers) state.layers = [];
+    if (!state.bookmarks) state.bookmarks = [];
     state.view = state.view || { page: 1, zoom: 1 };
     state.document = state.document || { pages: 1, name: '', bytes: 0 };
+    if (!state.document.backgrounds) state.document.backgrounds = new Map();
+    if (!state.flags) state.flags = {};
 
     // Load settings early so tools/UI can use them
     const savedSettingsJSON = localStorage.getItem('user-settings');
@@ -540,7 +692,7 @@ async function boot() {
     renderer = new Renderer(state, els, eventBus);
     pdfService = new PdfService(state, eventBus);
     exporter = new PdfExporter(state, pdfService);
-    exporter.setRenderer?.(renderer) // <- add this line so overlays are included
+    exporter.setRenderer?.(renderer); // include overlays in image export
 
     // Wire services
     pdfService.exporter = exporter;
@@ -548,7 +700,7 @@ async function boot() {
 
     // Tooling
     toolManager = new ToolManager(state, renderer, els, eventBus);
-    propertiesManager = new PropertiesManager(state, els, eventBus, renderer);
+    propertiesManager = new PropertiesManager(state, els, eventBus, renderer, history);
     toolManager.setPropertiesManager(propertiesManager);
 
     const tools = {
@@ -586,10 +738,6 @@ async function boot() {
     bindCanvasPointer();
     bindToolButtons();
     bindGlobalUI();
-
-    // Re-render on changes
-    eventBus.on('object:modified', () => renderer.renderAll?.());
-    eventBus.on('object:deleted', () => renderer.renderAll?.());
 
     // Persist settings on change
     eventBus.on('property:changed', () => {
