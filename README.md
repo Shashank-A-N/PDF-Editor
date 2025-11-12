@@ -45,4 +45,5 @@ A professional, feature-rich PDF editor built entirely in the browser using mode
 1. Clone the repository:
 ```bash
 git clone https://github.com/yourusername/pdf-editor-ultra.git
+
 cd pdf-editor-ultra
