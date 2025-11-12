@@ -13,70 +13,40 @@ export class HelpModal extends BaseModal {
     })
 
     this.open()
-    // Add event listener for the new form
-    this.attachFormHandler()
+    // Add event listener for the new copy button
+    this.attachCopyHandler()
   }
 
   /**
-   * Attaches the submit event listener to the support form.
-   * This now sends the form data to your email via FormSubmit.co.
+   * Attaches the click event listener to the copy email button.
    */
-  attachFormHandler() {
-    const form = document.getElementById('help-support-form')
-    const formContainer = form ? form.parentElement : null
-    if (!form || !formContainer) return
+  attachCopyHandler() {
+    const copyButton = document.getElementById('copy-email-btn')
+    const emailAddress = document.getElementById('support-email-address')
+    if (!copyButton || !emailAddress) return
 
-    form.addEventListener('submit', (e) => {
-      e.preventDefault()
-      const formData = new FormData(form)
-      const data = Object.fromEntries(formData.entries())
-      const submitButton = form.querySelector('button[type="submit"]')
+    copyButton.addEventListener('click', () => {
+      const email = emailAddress.textContent
 
-      // Show a "sending" state to the user
-      form.style.opacity = '0.5'
-      form.style.pointerEvents = 'none'
-      if (submitButton) {
-        submitButton.textContent = 'Sending...'
-        submitButton.disabled = true
-      }
+      // Use the modern Navigator Clipboard API
+      navigator.clipboard.writeText(email).then(() => {
+        // Success! Show feedback to the user
+        const originalText = copyButton.textContent
+        copyButton.textContent = 'Copied!'
+        copyButton.disabled = true
 
-      fetch('https://formsubmit.co/shashankan077@gmail.com', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json'
-        },
-        body: JSON.stringify(data)
-      })
-      .then(response => {
-        if (!response.ok) {
-          // Handle HTTP errors
-          throw new Error(`Network response was not ok: ${response.statusText}`)
-        }
-        return response.json()
-      })
-      .then(data => {
-        console.log('FormSubmit Success:', data)
-        // Show the success message
-        formContainer.innerHTML = `
-          <div class="p-4 text-center bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-200 rounded-lg">
-            <strong class="font-semibold">Thank you!</strong>
-            <p class="text-sm">Your message has been sent. We'll be in touch soon.</p>
-          </div>
-        `
-      })
-      .catch(error => {
-        console.error('Form Submission Error:', error)
-        // Show an error message to the user
-        formContainer.innerHTML = `
-          <div class="p-4 text-center bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-200 rounded-lg">
-            <strong class="font-semibold">Submission Failed</strong>
-            <p class="text-sm">Sorry, we couldn't send your message. Please try again later.</p>
-            <button onclick="window.location.reload()" class="mt-2 px-3 py-1 bg-blue-500 text-white rounded text-xs">Reload Help</button>
-          </div>
-        `
-        // Note: You might want a more sophisticated way to reset the modal
-        // than window.location.reload(), but this is a simple fix.
+        // Reset button text after 2 seconds
+        setTimeout(() => {
+          copyButton.textContent = originalText
+          copyButton.disabled = false
+        }, 2000)
+      }).catch(err => {
+        // Handle error (e.g., if permissions are denied)
+        console.error('Failed to copy email: ', err)
+        copyButton.textContent = 'Failed'
+        setTimeout(() => {
+          copyButton.textContent = 'Copy'
+        }, 2000)
       })
     })
   }
@@ -154,26 +124,14 @@ export class HelpModal extends BaseModal {
             </div>
 
             <div>
-              <h4 class="text-lg font-semibold mb-2">Submit a Support Request</h4>
-              <p class="text-sm mb-3 text-slate-600 dark:text-slate-400">Can't find your answer? Fill out the form below and we'll get back to you.</p>
-              
-              <form id="help-support-form" class="space-y-4">
-                <div>
-                  <label for="support-email" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Your Email</label>
-                  <input type="email" id="support-email" name="email" required class="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="you@example.com">
-                </div>
-                <div>
-                  <label for="support-subject" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Subject</Labe>
-                  <input type="text" id="support-subject" name="subject" required class="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="e.g., Issue with saving file">
-                </div>
-                <div>
-                  <label for="support-message" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">How can we help?</label>
-                  <textarea id="support-message" name="message" rows="4" required class="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Describe your issue or question in detail..."></textarea>
-                </div>
-                <button type="submit" class="w-full px-4 py-3 bg-green-500 text-white rounded-lg font-semibold hover:bg-green-600 transition focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 dark:focus:ring-offset-slate-900">
-                  Send Message
+              <h4 class="text-lg font-semibold mb-2">Contact Support</h4>
+              <p class="text-sm mb-3 text-slate-600 dark:text-slate-400">For issues or questions, please email us directly. Click the button to copy the address.</p>
+              <div class="flex flex-col sm:flex-row gap-2 p-3 rounded-lg bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
+                <span class="flex-1 text-sm font-medium text-slate-700 dark:text-slate-300 my-auto break-all" id="support-email-address">shashankan077@gmail.com</span>
+                <button id="copy-email-btn" class="flex-shrink-0 px-3 py-1.5 bg-blue-500 text-white rounded-md text-xs font-semibold hover:bg-blue-600 transition">
+                  Copy
                 </button>
-              </form>
+              </div>
             </div>
 
           </div>
