@@ -290,4 +290,8 @@ export class Toolbar {
 
     return `${size.toFixed(1)} ${units[unitIndex]}`
   }
+  refreshAfterMutation() {
+    this.eventBus.emit('object:modified');       // triggers renderAll via app.js listener
+    this.renderer?.renderThumbnails?.();         // optional thumbnails refresh
+  }
 }
