@@ -45,7 +45,8 @@ export class ShapeProperties {
         <div class="grid grid-cols-4 gap-2 mb-3">
           ${this.getColorSwatches(
             ['#000000', '#FFFFFF', '#EF4444', '#3B82F6', '#10B981', '#F59E0B', '#8B5CF6', '#EC4899'],
-            obj.fill !== 'transparent' ? obj.fill : null
+            obj.fill !== 'transparent' ? obj.fill : null,
+            'fill'
           )}
         </div>
         <input type="color" id="prop-shape-fill" value="${obj.fill !== 'transparent' ? obj.fill : '#000000'}" class="property-input h-12 mb-2">
@@ -64,7 +65,8 @@ export class ShapeProperties {
         <div class="grid grid-cols-4 gap-2 mb-3">
           ${this.getColorSwatches(
             ['#000000', '#FFFFFF', '#EF4444', '#3B82F6', '#10B981', '#F59E0B', '#8B5CF6', '#EC4899'],
-            obj.stroke !== 'transparent' ? obj.stroke : null
+            obj.stroke !== 'transparent' ? obj.stroke : null,
+            'stroke'
           )}
         </div>
         <input type="color" id="prop-shape-stroke" value="${obj.stroke !== 'transparent' ? obj.stroke : '#000000'}" class="property-input h-12 mb-2">
@@ -154,7 +156,8 @@ export class ShapeProperties {
     const fillColorSwatches = document.querySelectorAll('.fill-color-swatch')
     fillColorSwatches.forEach(swatch => {
       swatch.addEventListener('click', (e) => {
-        obj.fill = e.target.dataset.color
+        const color = e.currentTarget.dataset.color
+        obj.fill = color
         obj.modified = Date.now()
         document.getElementById('prop-shape-fill').value = obj.fill
         document.getElementById('prop-shape-fill-transparent').checked = false
@@ -166,7 +169,8 @@ export class ShapeProperties {
     const strokeColorSwatches = document.querySelectorAll('.stroke-color-swatch')
     strokeColorSwatches.forEach(swatch => {
       swatch.addEventListener('click', (e) => {
-        obj.stroke = e.target.dataset.color
+        const color = e.currentTarget.dataset.color
+        obj.stroke = color
         obj.modified = Date.now()
         document.getElementById('prop-shape-stroke').value = obj.stroke
         document.getElementById('prop-shape-stroke-transparent').checked = false
@@ -304,14 +308,22 @@ export class ShapeProperties {
     })
   }
 
-  getColorSwatches(colors, current) {
-    const className = colors === colors ? 'fill-color-swatch' : 'stroke-color-swatch'
+  getColorSwatches(colors, current, type = 'fill') {
+    // type should be 'fill' or 'stroke'
+    const className = type === 'fill' ? 'fill-color-swatch' : 'stroke-color-swatch'
     return colors.map(color => `
-      <button class="${className} w-full h-10 rounded-lg border-2 transition-all ${
-        color === current ? 'border-blue-500 ring-2 ring-blue-200 dark:ring-blue-800' : 'border-slate-300 dark:border-slate-600 hover:border-blue-400'
-      }" style="background-color: ${color}" data-color="${color}"></button>
+      <button
+        class="${className} w-full h-10 rounded-lg border-2 transition-all ${
+          color === current ? 'border-blue-500 ring-2 ring-blue-200 dark:ring-blue-800' : 'border-slate-300 dark:border-slate-600 hover:border-blue-400'
+        }"
+        style="background-color: ${color}"
+        data-color="${color}"
+        type="button"
+        aria-label="${type} color ${color}"
+      ></button>
     `).join('')
   }
+
 
   generateId() {
     return '_' + Math.random().toString(36).substr(2, 9) + Date.now().toString(36)
